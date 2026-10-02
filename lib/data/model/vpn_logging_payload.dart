@@ -6,26 +6,44 @@ final class VpnLoggingPayload {
   final VpnLoggingRoutingProfilePayload routingProfilePayload;
   final List<String> excludedRoutes;
 
+  /// {@template vpn_logging_payload_listener_mode}
+  /// Active traffic listener mode value (`tun` or `socks`).
+  /// {@endtemplate}
+  final String? listenerMode;
+
+  /// {@template vpn_logging_payload_socks_port}
+  /// Port the local SOCKS5 proxy binds to (when SOCKS mode is active).
+  /// {@endtemplate}
+  final int? socksPort;
+
   const VpnLoggingPayload({
     required this.serverPayload,
     required this.routingProfilePayload,
     required this.excludedRoutes,
+    this.listenerMode,
+    this.socksPort,
   });
 
   factory VpnLoggingPayload.fromModels({
     required ServerData server,
     required RoutingProfileData routingProfile,
     required List<String> excludedRoutes,
+    String? listenerMode,
+    int? socksPort,
   }) => VpnLoggingPayload(
     serverPayload: VpnLoggingServerPayload.fromModel(server),
     routingProfilePayload: VpnLoggingRoutingProfilePayload.fromModel(routingProfile),
     excludedRoutes: List.unmodifiable(excludedRoutes),
+    listenerMode: listenerMode,
+    socksPort: socksPort,
   );
 
   Map<String, Object?> toJson() => {
     'server': serverPayload.toJson(),
     'routingProfile': routingProfilePayload.toJson(),
     'excludedRoutes': excludedRoutes,
+    'listenerMode': listenerMode,
+    'socksPort': socksPort,
   };
 }
 
