@@ -17,6 +17,7 @@ import 'package:vpn_plugin/models/configuration.dart';
 import 'package:vpn_plugin/models/configuration_log_level.dart';
 import 'package:vpn_plugin/models/endpoint.dart';
 import 'package:vpn_plugin/models/ini_document.dart';
+import 'package:vpn_plugin/models/listener_mode.dart';
 import 'package:vpn_plugin/models/socks.dart';
 import 'package:vpn_plugin/models/tun.dart';
 import 'package:vpn_plugin/models/upstream_protocol.dart';
@@ -192,15 +193,20 @@ final class ConfigurationEncoder extends Converter<Configuration, String> {
 
     document.section(ConfigurationCodecKeys.listenerSection);
 
-    final IniSection tun = document.section(ConfigurationCodecKeys.tunSection);
-    tun.setStringList(ConfigurationCodecKeys.includedRoutes, config.tun.includedRoutes);
-    tun.setStringList(ConfigurationCodecKeys.excludedRoutes, config.tun.excludedRoutes);
-    tun.setInt(ConfigurationCodecKeys.mtuSize, config.tun.mtuSize);
-
-    // final IniSection socks = document.section(ConfigurationCodecKeys.socksSection);
-    // socks.setString(ConfigurationCodecKeys.socksAddress, config.socks.address);
-    // socks.setString(ConfigurationCodecKeys.socksUsername, config.socks.username);
-    // socks.setString(ConfigurationCodecKeys.socksPassword, config.socks.password);
+    // Exactly one listener is active at a time: emit only the section that
+    // corresponds to the configured [Configuration.listenerMode].
+    switch (config.listenerMode) {
+      case ListenerMode.tun:
+        final IniSection tun = document.section(ConfigurationCodecKeys.tunSection);
+        tun.setStringList(ConfigurationCodecKeys.includedRoutes, config.tun.includedRoutes);
+        tun.setStringList(ConfigurationCodecKeys.excludedRoutes, config.tun.excludedRoutes);
+        tun.setInt(ConfigurationCodecKeys.mtuSize, config.tun.mtuSize);
+      case ListenerMode.socks:
+        final IniSection socks = document.section(ConfigurationCodecKeys.socksSection);
+        socks.setString(ConfigurationCodecKeys.socksAddress, config.socks.address);
+        socks.setString(ConfigurationCodecKeys.socksUsername, config.socks.username);
+        socks.setString(ConfigurationCodecKeys.socksPassword, config.socks.password);
+    }
 
     return document.toString();
   }
@@ -241,6 +247,15 @@ final class ConfigurationDecoder extends Converter<String, Configuration> {
   @override
   Configuration convert(String input) {
     final IniDocument document = IniDocument.parse(input);
+
+    // The active listener is determined by the presence of the corresponding
+    // section. Only one listener is expected to be active at a time; if both
+    // sections are present, the SOCKS listener takes precedence.
+    //
+    // NOTE: this must be checked before accessing sections below, because
+    // [IniDocument.section] creates the section if it is missing.
+    final ListenerMode listenerMode =
+        document.containsSection(ConfigurationCodecKeys.socksSection) ? ListenerMode.socks : ListenerMode.tun;
 
     final IniSection top = document.section(null);
     final IniSection endpoint = document.section(ConfigurationCodecKeys.endpointSection);
@@ -295,6 +310,7 @@ final class ConfigurationDecoder extends Converter<String, Configuration> {
       killSwitchEnabled: killSwitchEnabled,
       postQuantumGroupEnabled: postQuantumGroupEnabled,
       vpnMode: _enumByValue(VpnMode.values, vpnModeStr, (e) => e.value, fallback: VpnMode.general),
+      listenerMode: listenerMode,
       endpoint: Endpoint(
         name: name,
         hostName: hostName,

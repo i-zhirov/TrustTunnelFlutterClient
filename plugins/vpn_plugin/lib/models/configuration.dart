@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:vpn_plugin/models/configuration_log_level.dart';
 import 'package:vpn_plugin/models/endpoint.dart';
+import 'package:vpn_plugin/models/listener_mode.dart';
 import 'package:vpn_plugin/models/socks.dart';
 import 'package:vpn_plugin/models/tun.dart';
 import 'package:vpn_plugin/models/vpn_mode.dart';
@@ -52,6 +53,15 @@ final class Configuration {
   /// {@endtemplate}
   final Tun tun;
 
+  /// {@template configuration_listener_mode_field}
+  /// Active traffic listener mode.
+  ///
+  /// Exactly one listener is active at a time: either [ListenerMode.tun] or
+  /// [ListenerMode.socks]. The encoder emits only the section that corresponds
+  /// to this mode.
+  /// {@endtemplate}
+  final ListenerMode listenerMode;
+
   /// {@template configuration_socks_field}
   /// SOCKS listener configuration.
   ///
@@ -79,10 +89,12 @@ final class Configuration {
 
   /// {@macro configuration}
   ///
-  /// [vpnMode], [endpoint], [tun] and [socks] are required because they define
-  /// the primary routing behavior and traffic listener configuration.
+  /// [vpnMode], [endpoint], [tun], [socks] and [listenerMode] are required
+  /// because they define the primary routing behavior and traffic listener
+  /// configuration.
   ///
   /// Defaults are chosen to be safe and useful for development:
+  /// - [listenerMode] defaults to [ListenerMode.tun].
   /// - [logLevel] defaults to [ConfigurationLogLevel.debug].
   /// - [killSwitchEnabled] defaults to `true`.
   /// - [postQuantumGroupEnabled] defaults to `false`.
@@ -90,6 +102,7 @@ final class Configuration {
     this.logLevel = ConfigurationLogLevel.debug,
     this.killSwitchEnabled = true,
     this.postQuantumGroupEnabled = true,
+    this.listenerMode = ListenerMode.tun,
     required this.vpnMode,
     required this.endpoint,
     required this.tun,
@@ -98,7 +111,7 @@ final class Configuration {
 
   @override
   String toString() =>
-      'Configuration(logLevel: $logLevel, vpnMode: $vpnMode, endpoint: $endpoint, tun: $tun, socks: $socks, killSwitchEnabled: $killSwitchEnabled, postQuantumGroupEnabled: $postQuantumGroupEnabled)';
+      'Configuration(logLevel: $logLevel, vpnMode: $vpnMode, endpoint: $endpoint, listenerMode: $listenerMode, tun: $tun, socks: $socks, killSwitchEnabled: $killSwitchEnabled, postQuantumGroupEnabled: $postQuantumGroupEnabled)';
 
   @override
   bool operator ==(covariant Configuration other) {
@@ -107,6 +120,7 @@ final class Configuration {
     return other.logLevel == logLevel &&
         other.vpnMode == vpnMode &&
         other.endpoint == endpoint &&
+        other.listenerMode == listenerMode &&
         other.tun == tun &&
         other.socks == socks &&
         other.killSwitchEnabled == killSwitchEnabled &&
@@ -118,6 +132,7 @@ final class Configuration {
     logLevel,
     vpnMode,
     endpoint,
+    listenerMode,
     tun,
     socks,
     killSwitchEnabled,

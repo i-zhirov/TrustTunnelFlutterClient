@@ -78,6 +78,11 @@ final class IniDocument {
   /// The top-level section is represented by `null`.
   IniSection section(String? name) => _sections.putIfAbsent(name, () => IniSection._(name));
 
+  /// Returns whether the section for [name] is present in this document.
+  ///
+  /// Unlike [section], this does not create the section.
+  bool containsSection(String? name) => _sections.containsKey(name);
+
   @override
   String toString() {
     final StringBuffer out = StringBuffer();
