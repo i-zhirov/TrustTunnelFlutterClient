@@ -192,5 +192,16 @@
   "openHomeScreenAutomatically": "Open Home screen automatically",
   "connection": "Connection",
   "autoConnectOnAppLaunch": "Auto-connect on app launch",
-  "autoConnectNoServersAdded": "No servers added. To apply the setting, add a server"
+  "autoConnectNoServersAdded": "No servers added. To apply the setting, add a server",
+  "socksProxySettings": "SOCKS5 proxy",
+  "connectionMode": "Connection mode",
+  "tunMode": "TUN",
+  "tunModeDescription": "Route traffic through a virtual network interface",
+  "socksProxyMode": "SOCKS5 proxy",
+  "socksProxyModeDescription": "Expose a local SOCKS5 proxy instead of a virtual network interface",
+  "proxyParameters": "Proxy parameters",
+  "proxyPort": "Port",
+  "proxyPortHint": "1080",
+  "proxyUsername": "Proxy username",
+  "proxyPassword": "Proxy password"
 }

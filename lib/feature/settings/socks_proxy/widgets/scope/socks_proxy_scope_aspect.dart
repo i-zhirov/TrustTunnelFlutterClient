@@ -1,0 +1,4 @@
+enum SocksProxyScopeAspect {
+  settings,
+  loading,
+}
