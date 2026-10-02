@@ -19,6 +19,7 @@ import 'package:trusttunnel/data/datasources/local_sources/logs_local_source_imp
 import 'package:trusttunnel/data/datasources/local_sources/routing_datasource_impl.dart';
 import 'package:trusttunnel/data/datasources/local_sources/server_datasource_impl.dart';
 import 'package:trusttunnel/data/datasources/local_sources/settings_datasource_impl.dart';
+import 'package:trusttunnel/data/datasources/local_sources/socks_settings_datasource_impl.dart';
 import 'package:trusttunnel/data/datasources/logging_settings_datasource.dart';
 import 'package:trusttunnel/data/datasources/logs_export_destination_datasource.dart';
 import 'package:trusttunnel/data/datasources/logs_local_source.dart';
@@ -29,6 +30,7 @@ import 'package:trusttunnel/data/datasources/open_main_window_on_login_datasourc
 import 'package:trusttunnel/data/datasources/routing_datasource.dart';
 import 'package:trusttunnel/data/datasources/server_datasource.dart';
 import 'package:trusttunnel/data/datasources/settings_datasource.dart';
+import 'package:trusttunnel/data/datasources/socks_settings_datasource.dart';
 import 'package:trusttunnel/data/datasources/vpn_datasource.dart';
 import 'package:trusttunnel/feature/app/controller/app_window_controller.dart';
 import 'package:trusttunnel/feature/app/controller/macos_app_window_controller.dart';
@@ -71,6 +73,8 @@ abstract class DependencyFactory {
   OpenMainWindowOnLoginDataSource get openMainWindowOnLoginDataSource;
 
   AutoConnectOnLaunchSettingsDataSource get autoConnectOnLaunchSettingsDataSource;
+
+  SocksSettingsDataSource get socksSettingsDataSource;
 
   AppWindowController get appWindowController;
 
@@ -122,6 +126,8 @@ class DependencyFactoryImpl implements DependencyFactory {
   OpenMainWindowOnLoginDataSource? _openMainWindowOnLoginDataSource;
 
   AutoConnectOnLaunchSettingsDataSource? _autoConnectOnLaunchSettingsDataSource;
+
+  SocksSettingsDataSource? _socksSettingsDataSource;
 
   AppWindowController? _appWindowController;
 
@@ -203,6 +209,12 @@ class DependencyFactoryImpl implements DependencyFactory {
   @override
   AutoConnectOnLaunchSettingsDataSource get autoConnectOnLaunchSettingsDataSource =>
       _autoConnectOnLaunchSettingsDataSource ??= AutoConnectOnLaunchSettingsDataSourceImpl(
+        preferences: sharedPreferences,
+      );
+
+  @override
+  SocksSettingsDataSource get socksSettingsDataSource =>
+      _socksSettingsDataSource ??= SocksSettingsDataSourceImpl(
         preferences: sharedPreferences,
       );
 
