@@ -36,9 +36,11 @@ by adding this repository and filtering for the `app-release.apk` asset.
 
 ## Branch layout
 
-- `master` — mirror of the upstream repository (the original README lives in
+- `master` — default branch: mirror of the upstream **code** (this fork README is
+  shown by default; the upstream README is preserved at
   [`README_UPSTREAM.md`](README_UPSTREAM.md))
-- `socks5-proxy-support` — fork changes (SOCKS5 proxy feature, CI, releases)
+- `socks5-proxy-support` — **fork changes**: the SOCKS5 proxy feature, CI and
+  release workflows
 
 ## Upstream documentation
 
