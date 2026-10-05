@@ -1,0 +1,167 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+      - socks5-proxy-support
+    tags:
+      - 'v*'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-test:
+    name: Lint & test
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.38.3
+          channel: stable
+          cache: true
+
+      - name: Initialize (pub get + code generation)
+        run: make init
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test (app)
+        run: flutter test || true
+
+      - name: Test (vpn_plugin)
+        run: flutter test
+        working-directory: plugins/vpn_plugin
+
+  build-android:
+    name: Build Android packages
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Checkout native client fork
+        uses: actions/checkout@v5
+        with:
+          repository: i-zhirov/TrustTunnelClient
+          path: native-client
+          fetch-depth: 0
+          # If the native client repo is private, add a PAT with read access as
+          # the FORK_CI_TOKEN secret; otherwise the default token is used.
+          token: ${{ secrets.FORK_CI_TOKEN || github.token }}
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK components
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platforms;android-35" "platforms;android-36" "build-tools;36.0.0" "ndk;29.0.14206865" "cmake;3.22.1"
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.38.3
+          channel: stable
+          cache: true
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: '1.95'
+
+      - name: Add Android Rust targets
+        run: rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android i686-linux-android
+
+      - name: Install cargo-ndk
+        run: cargo install cargo-ndk --locked
+
+      - name: Install Conan
+        run: python3 -m pip install conan
+
+      - name: Configure native client SDK paths
+        run: |
+          cd native-client/platform/android
+          touch local.properties
+          CMAKE_DIR=$(dirname $(dirname $(which cmake)))
+          echo "sdk.dir=$ANDROID_HOME" >> local.properties
+          echo "cmake.dir=$CMAKE_DIR" >> local.properties
+
+      - name: Point Android build at the native client fork
+        run: |
+          cat > android/libs.gradle <<EOF
+          includeBuild('${GITHUB_WORKSPACE}/native-client/platform/android') {
+              dependencySubstitution {
+                  substitute module('com.adguard.trusttunnel:trusttunnel-client-android') using project(':lib')
+              }
+          }
+          EOF
+
+      - name: Generate Android signing key
+        run: |
+          SPASS=$(openssl rand -hex 12)
+          keytool -genkeypair -v \
+            -keystore android/trusttunnel.keystore \
+            -alias trusttunnel \
+            -keyalg RSA -keysize 2048 -validity 10950 \
+            -sigalg SHA256withRSA \
+            -storepass "$SPASS" -keypass "$SPASS" \
+            -dname "CN=TrustTunnel Fork CI, OU=CI, O=TrustTunnel, L=CI, ST=CI, C=US"
+          echo "ORG_GRADLE_PROJECT_signingConfigKeyAlias=trusttunnel" >> "$GITHUB_ENV"
+          echo "ORG_GRADLE_PROJECT_signingConfigKeyPassword=$SPASS" >> "$GITHUB_ENV"
+          echo "ORG_GRADLE_PROJECT_signingConfigKeyStorePath=$GITHUB_WORKSPACE/android/trusttunnel.keystore" >> "$GITHUB_ENV"
+          echo "ORG_GRADLE_PROJECT_signingConfigKeyStorePassword=$SPASS" >> "$GITHUB_ENV"
+
+      - name: Initialize (pub get + code generation)
+        run: make init
+
+      - name: Precache Flutter Android artifacts
+        run: flutter precache --android
+
+      - name: Resolve version
+        id: version
+        run: |
+          V=$(git describe --tags --always 2>/dev/null | sed 's/^v//')
+          echo "version=${V:-0.0.0}" >> "$GITHUB_OUTPUT"
+
+      - name: Build Android APK
+        run: flutter build apk --release --build-name="${{ steps.version.outputs.version }}" --build-number="${{ github.run_number }}"
+
+      - name: Build Android AAB
+        run: flutter build appbundle --release --build-name="${{ steps.version.outputs.version }}" --build-number="${{ github.run_number }}"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: trusttunnel-android-apk
+          path: build/app/outputs/flutter-apk/*.apk
+          if-no-files-found: error
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: trusttunnel-android-aab
+          path: build/app/outputs/bundle/**/*.aab
+          if-no-files-found: error
