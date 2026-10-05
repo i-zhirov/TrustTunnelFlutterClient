@@ -60,6 +60,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: i-zhirov/TrustTunnelClient-redux
+          ref: socks5-proxy-support
           path: native-client
           fetch-depth: 0
           # If the native client repo is private, add a PAT with read access as
