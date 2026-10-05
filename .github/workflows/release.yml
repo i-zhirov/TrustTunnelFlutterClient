@@ -161,8 +161,9 @@ jobs:
           if [ "${{ inputs.prerelease }}" = "true" ]; then PRERELEASE="--prerelease"; fi
           gh release create "v$VERSION" \
             --title "TrustTunnel $VERSION" \
-            --notes "Release build from the i-zhirov fork.
+            --notes "Redux build from the i-zhirov fork (com.adguard.trusttunnel.redux).
 
+          Versioning follows upstream with a '-redux' suffix appended (e.g. 1.2.0-redux.1).
           Install with Obtainium: add the repo https://github.com/i-zhirov/TrustTunnelFlutterClient
           and filter by asset name 'app-release.apk'." \
             $PRERELEASE \
