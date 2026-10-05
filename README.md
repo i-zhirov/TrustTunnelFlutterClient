@@ -5,6 +5,9 @@
 > It is **not affiliated with or endorsed by the upstream project**, and it is
 > **not** an official release channel. Use at your own risk.
 
+> **Different app identifier.** Redux installs as **`com.adguard.trusttunnel.redux`**,
+> so it can be installed **alongside** the official TrustTunnel app on the same device.
+
 TrustTunnel Redux keeps the upstream functionality but adds one **experimental
 feature that is not present upstream**:
 
@@ -30,9 +33,6 @@ Installable packages (APK/AAB) are published as
 [GitHub Releases](https://github.com/i-zhirov/TrustTunnelFlutterClient-redux/releases).
 You can also install/update with [Obtainium](https://github.com/ImranR98/Obtainium)
 by adding this repository and filtering for the `app-release.apk` asset.
-
-> Redux uses the application id `com.adguard.trusttunnel.redux`, so it can be
-> installed side-by-side with the official TrustTunnel app.
 
 ## Branch layout
 
