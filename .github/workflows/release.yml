@@ -1,0 +1,170 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g. 0.1.0). If omitted, derived from git describe.'
+        required: false
+        type: string
+      prerelease:
+        description: 'Mark as prerelease'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build and publish release
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Checkout native client fork
+        uses: actions/checkout@v5
+        with:
+          repository: i-zhirov/TrustTunnelClient
+          path: native-client
+          fetch-depth: 0
+          token: ${{ secrets.FORK_CI_TOKEN || github.token }}
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Accept Android SDK licenses
+        run: yes | /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager --licenses >/dev/null || true
+
+      - name: Install Android SDK components
+        run: |
+          /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager "platforms;android-35" "platforms;android-36" "build-tools;36.0.0" "ndk;29.0.14206865" "cmake;3.22.1"
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.38.3
+          channel: stable
+          cache: true
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: '1.95'
+
+      - name: Add Android Rust targets
+        run: rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android i686-linux-android
+
+      - name: Install cargo-ndk
+        run: cargo install cargo-ndk --locked
+
+      - name: Install Conan
+        run: |
+          python3 -m pip install conan
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Bootstrap Conan dependencies
+        working-directory: native-client
+        run: |
+          conan profile detect --force
+          python3 scripts/bootstrap_conan_deps.py
+
+      - name: Configure native client SDK paths
+        run: |
+          cd native-client/platform/android
+          touch local.properties
+          CMAKE_DIR=$(dirname $(dirname $(which cmake)))
+          echo "sdk.dir=$ANDROID_HOME" >> local.properties
+          echo "cmake.dir=$CMAKE_DIR" >> local.properties
+
+      - name: Point Android build at the native client fork
+        run: |
+          cat > android/libs.gradle <<EOF
+          includeBuild('${GITHUB_WORKSPACE}/native-client/platform/android') {
+              dependencySubstitution {
+                  substitute module('com.adguard.trusttunnel:trusttunnel-client-android') using project(':lib')
+              }
+          }
+          EOF
+
+      - name: Configure Android signing
+        run: |
+          if [ -n "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" ]; then
+            echo "Using stable release keystore from secrets"
+            echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 -d > "$GITHUB_WORKSPACE/android/release.keystore"
+            echo "ORG_GRADLE_PROJECT_signingConfigKeyAlias=${{ secrets.RELEASE_KEYSTORE_ALIAS }}" >> "$GITHUB_ENV"
+            echo "ORG_GRADLE_PROJECT_signingConfigKeyPassword=${{ secrets.RELEASE_KEYSTORE_PASSWORD }}" >> "$GITHUB_ENV"
+            echo "ORG_GRADLE_PROJECT_signingConfigKeyStorePath=$GITHUB_WORKSPACE/android/release.keystore" >> "$GITHUB_ENV"
+            echo "ORG_GRADLE_PROJECT_signingConfigKeyStorePassword=${{ secrets.RELEASE_KEYSTORE_PASSWORD }}" >> "$GITHUB_ENV"
+          else
+            echo "No RELEASE_KEYSTORE_BASE64 secret found - generating a temporary CI key."
+            echo "NOTE: APKs signed with this key cannot be updated in place; add the"
+            echo "RELEASE_KEYSTORE_BASE64/ALIAS/PASSWORD secrets for stable signing."
+            SPASS=$(openssl rand -hex 12)
+            keytool -genkeypair -v \
+              -keystore android/trusttunnel.keystore \
+              -alias trusttunnel \
+              -keyalg RSA -keysize 2048 -validity 10950 \
+              -sigalg SHA256withRSA \
+              -storepass "$SPASS" -keypass "$SPASS" \
+              -dname "CN=TrustTunnel Fork CI, OU=CI, O=TrustTunnel, L=CI, ST=CI, C=US"
+            echo "ORG_GRADLE_PROJECT_signingConfigKeyAlias=trusttunnel" >> "$GITHUB_ENV"
+            echo "ORG_GRADLE_PROJECT_signingConfigKeyPassword=$SPASS" >> "$GITHUB_ENV"
+            echo "ORG_GRADLE_PROJECT_signingConfigKeyStorePath=$GITHUB_WORKSPACE/android/trusttunnel.keystore" >> "$GITHUB_ENV"
+            echo "ORG_GRADLE_PROJECT_signingConfigKeyStorePassword=$SPASS" >> "$GITHUB_ENV"
+          fi
+
+      - name: Initialize (pub get + code generation)
+        run: make init
+
+      - name: Precache Flutter Android artifacts
+        run: flutter precache --android
+
+      - name: Resolve version
+        id: version
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+          elif [ -n "$GITHUB_REF_NAME" ] && [[ "$GITHUB_REF_NAME" == v* ]]; then
+            echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          else
+            V=$(git describe --tags --always 2>/dev/null | sed 's/^v//')
+            echo "version=${V:-0.0.0}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build Android APK
+        run: flutter build apk --release --build-name="${{ steps.version.outputs.version }}" --build-number="${{ github.run_number }}"
+
+      - name: Build Android AAB
+        run: flutter build appbundle --release --build-name="${{ steps.version.outputs.version }}" --build-number="${{ github.run_number }}"
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          PRERELEASE=""
+          if [ "${{ inputs.prerelease }}" = "true" ]; then PRERELEASE="--prerelease"; fi
+          gh release create "v$VERSION" \
+            --title "TrustTunnel $VERSION" \
+            --notes "Release build from the i-zhirov fork.
+
+          Install with Obtainium: add the repo https://github.com/i-zhirov/TrustTunnelFlutterClient
+          and filter by asset name 'app-release.apk'." \
+            $PRERELEASE \
+            build/app/outputs/flutter-apk/app-release.apk \
+            build/app/outputs/bundle/release/app-release.aab
