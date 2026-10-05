@@ -36,7 +36,7 @@ jobs:
       - name: Checkout native client fork
         uses: actions/checkout@v5
         with:
-          repository: i-zhirov/TrustTunnelClient
+          repository: i-zhirov/TrustTunnelClient-redux
           path: native-client
           fetch-depth: 0
           token: ${{ secrets.FORK_CI_TOKEN || github.token }}
@@ -164,7 +164,7 @@ jobs:
             --notes "Redux build from the i-zhirov fork (com.adguard.trusttunnel.redux).
 
           Versioning follows upstream with a '-redux' suffix appended (e.g. 1.2.0-redux.1).
-          Install with Obtainium: add the repo https://github.com/i-zhirov/TrustTunnelFlutterClient
+          Install with Obtainium: add the repo https://github.com/i-zhirov/TrustTunnelFlutterClient-redux
           and filter by asset name 'app-release.apk'." \
             $PRERELEASE \
             build/app/outputs/flutter-apk/app-release.apk \
