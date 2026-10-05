@@ -98,7 +98,15 @@ jobs:
         run: cargo install cargo-ndk --locked
 
       - name: Install Conan
-        run: python3 -m pip install conan
+        run: |
+          python3 -m pip install conan
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Bootstrap Conan dependencies
+        working-directory: native-client
+        run: |
+          conan profile detect --force
+          python3 scripts/bootstrap_conan_deps.py
 
       - name: Configure native client SDK paths
         run: |
