@@ -51,10 +51,12 @@ class _SocksProxyScopeState extends State<SocksProxyScope> {
       loading: state.loading,
       mode: state.settings.mode,
       port: state.settings.port,
+      host: state.settings.host,
       username: state.settings.username,
       password: state.settings.password,
       setMode: _controller.setMode,
       setPort: _controller.setPort,
+      setHost: _controller.setHost,
       setUsername: _controller.setUsername,
       setPassword: _controller.setPassword,
       child: widget.child,
@@ -86,10 +88,12 @@ class _InheritedSocksProxyScope extends InheritedModel<SocksProxyScopeAspect>
     required this.loading,
     required this.mode,
     required this.port,
+    required this.host,
     required this.username,
     required this.password,
     required this.setMode,
     required this.setPort,
+    required this.setHost,
     required this.setUsername,
     required this.setPassword,
   });
@@ -104,6 +108,9 @@ class _InheritedSocksProxyScope extends InheritedModel<SocksProxyScopeAspect>
   final int port;
 
   @override
+  final String host;
+
+  @override
   final String username;
 
   @override
@@ -116,6 +123,9 @@ class _InheritedSocksProxyScope extends InheritedModel<SocksProxyScopeAspect>
   final void Function(int port) setPort;
 
   @override
+  final void Function(String host) setHost;
+
+  @override
   final void Function(String username) setUsername;
 
   @override
@@ -126,10 +136,12 @@ class _InheritedSocksProxyScope extends InheritedModel<SocksProxyScopeAspect>
       loading != oldWidget.loading ||
       mode != oldWidget.mode ||
       port != oldWidget.port ||
+      host != oldWidget.host ||
       username != oldWidget.username ||
       password != oldWidget.password ||
       setMode != oldWidget.setMode ||
       setPort != oldWidget.setPort ||
+      setHost != oldWidget.setHost ||
       setUsername != oldWidget.setUsername ||
       setPassword != oldWidget.setPassword;
 
@@ -147,6 +159,7 @@ class _InheritedSocksProxyScope extends InheritedModel<SocksProxyScopeAspect>
         SocksProxyScopeAspect.settings =>
           mode != oldWidget.mode ||
               port != oldWidget.port ||
+              host != oldWidget.host ||
               username != oldWidget.username ||
               password != oldWidget.password,
         SocksProxyScopeAspect.loading => loading != oldWidget.loading,

@@ -13,6 +13,9 @@ abstract class SocksProxyScopeController {
   /// Port the local SOCKS5 proxy binds to.
   abstract final int port;
 
+  /// Address the local SOCKS5 proxy binds to.
+  abstract final String host;
+
   /// SOCKS proxy authentication username.
   abstract final String username;
 
@@ -24,6 +27,9 @@ abstract class SocksProxyScopeController {
 
   /// Persists the SOCKS proxy bind port.
   abstract final void Function(int port) setPort;
+
+  /// Persists the SOCKS proxy bind address (host).
+  abstract final void Function(String host) setHost;
 
   /// Persists the SOCKS proxy authentication username.
   abstract final void Function(String username) setUsername;

@@ -10,12 +10,14 @@ import 'package:vpn_plugin/models/listener_mode.dart';
 class SocksSettingsDataSourceImpl implements SocksSettingsDataSource {
   static const _modeKey = 'listener_mode';
   static const _portKey = 'socks_proxy_port';
+  static const _hostKey = 'socks_proxy_host';
   static const _usernameKey = 'socks_proxy_username';
   static const _passwordKey = 'socks_proxy_password';
 
   static const _defaultPort = 1080;
   static const _minPort = 1;
   static const _maxPort = 65535;
+  static const _defaultHost = '127.0.0.1';
 
   final SharedPreferences _preferences;
 
@@ -27,6 +29,7 @@ class SocksSettingsDataSourceImpl implements SocksSettingsDataSource {
   Future<SocksSettings> getSettings() async => SocksSettings(
     mode: _readMode(),
     port: _readPort(),
+    host: _preferences.getString(_hostKey) ?? _defaultHost,
     username: _preferences.getString(_usernameKey) ?? '',
     password: _preferences.getString(_passwordKey) ?? '',
   );
@@ -54,6 +57,9 @@ class SocksSettingsDataSourceImpl implements SocksSettingsDataSource {
 
   @override
   Future<void> setPort(int port) => _preferences.setInt(_portKey, _normalizePort(port));
+
+  @override
+  Future<void> setHost(String host) => _preferences.setString(_hostKey, host);
 
   @override
   Future<void> setUsername(String username) => _preferences.setString(_usernameKey, username);

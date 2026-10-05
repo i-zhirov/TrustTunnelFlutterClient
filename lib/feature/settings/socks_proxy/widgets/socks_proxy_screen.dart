@@ -29,6 +29,7 @@ class _SocksProxyScreenState extends State<SocksProxyScreen> {
   late SocksProxyScopeController _controller;
   late ListenerMode _mode;
   late int _port;
+  late String _host;
   late String _username;
   late String _password;
   late final ValueNotifier<bool> _isPasswordVisibleNotifier;
@@ -45,6 +46,7 @@ class _SocksProxyScreenState extends State<SocksProxyScreen> {
     _controller = SocksProxyScope.controllerOf(context);
     _mode = _controller.mode;
     _port = _controller.port;
+    _host = _controller.host;
     _username = _controller.username;
     _password = _controller.password;
   }
@@ -104,6 +106,17 @@ class _SocksProxyScreenState extends State<SocksProxyScreen> {
                 keyboardType: TextInputType.number,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 onChanged: _onPortChanged,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: CustomTextField(
+                value: _host,
+                label: context.ln.proxyHost,
+                hint: context.ln.proxyHostHint,
+                helper: context.ln.proxyHostHelper,
+                onChanged: _controller.setHost,
               ),
             ),
             const SizedBox(height: 16),

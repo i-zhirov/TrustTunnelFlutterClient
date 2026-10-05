@@ -45,6 +45,11 @@ final class SocksProxyController extends BaseStateController<SocksProxyState> wi
     () => _repository.setPort(port),
   );
 
+  /// Persists the SOCKS proxy bind address (host).
+  void setHost(String host) => _persist(
+    () => _repository.setHost(host),
+  );
+
   /// Persists the SOCKS proxy authentication username.
   void setUsername(String username) => _persist(
     () => _repository.setUsername(username),

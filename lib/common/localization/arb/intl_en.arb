@@ -201,6 +201,9 @@
   "proxyParameters": "Proxy parameters",
   "proxyPort": "Port",
   "proxyPortHint": "1080",
+  "proxyHost": "Bind address",
+  "proxyHostHint": "127.0.0.1",
+  "proxyHostHelper": "Use 0.0.0.0 to allow connections from the local network",
   "proxyUsername": "Proxy username",
   "proxyPassword": "Proxy password"
 }

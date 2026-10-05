@@ -16,6 +16,9 @@ abstract class SocksSettingsRepository {
   /// Persists the SOCKS proxy bind port.
   Future<void> setPort(int port);
 
+  /// Persists the SOCKS proxy bind address (host).
+  Future<void> setHost(String host);
+
   /// Persists the SOCKS proxy authentication username.
   Future<void> setUsername(String username);
 
@@ -43,6 +46,9 @@ class SocksSettingsRepositoryImpl implements SocksSettingsRepository {
 
   @override
   Future<void> setPort(int port) => _dataSource.setPort(port);
+
+  @override
+  Future<void> setHost(String host) => _dataSource.setHost(host);
 
   @override
   Future<void> setUsername(String username) => _dataSource.setUsername(username);

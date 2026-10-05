@@ -21,6 +21,14 @@ final class SocksSettings {
   /// {@endtemplate}
   final int port;
 
+  /// {@template socks_settings_host}
+  /// Address the local SOCKS5 proxy binds to.
+  ///
+  /// Defaults to the loopback interface (`127.0.0.1`). Use `0.0.0.0` to listen
+  /// on all interfaces and allow connections from the local network.
+  /// {@endtemplate}
+  final String host;
+
   /// {@template socks_settings_username}
   /// Optional username for SOCKS5 authentication.
   /// {@endtemplate}
@@ -38,32 +46,39 @@ final class SocksSettings {
   const SocksSettings({
     this.mode = ListenerMode.tun,
     this.port = 1080,
+    this.host = '127.0.0.1',
     this.username = '',
     this.password = '',
   });
 
   /// {@template socks_settings_address}
-  /// Bind address of the local SOCKS5 proxy: `127.0.0.1:<port>`.
+  /// Bind address of the local SOCKS5 proxy: `<host>:<port>`.
   ///
-  /// The listener is always bound to the loopback interface to avoid exposing
-  /// the proxy to the local network.
+  /// By default the listener is bound to the loopback interface to avoid
+  /// exposing the proxy to the local network. Set [host] to `0.0.0.0` to allow
+  /// connections from other devices.
   /// {@endtemplate}
-  String get address => '127.0.0.1:$port';
+  String get address => '$host:$port';
 
   @override
-  String toString() => 'SocksSettings(mode: $mode, port: $port, username: $username, password: $password)';
+  String toString() => 'SocksSettings(mode: $mode, port: $port, host: $host, username: $username, password: $password)';
 
   @override
   bool operator ==(covariant SocksSettings other) {
     if (identical(this, other)) return true;
 
-    return other.mode == mode && other.port == port && other.username == username && other.password == password;
+    return other.mode == mode &&
+        other.port == port &&
+        other.host == host &&
+        other.username == username &&
+        other.password == password;
   }
 
   @override
   int get hashCode => Object.hashAll([
     mode,
     port,
+    host,
     username,
     password,
   ]);
