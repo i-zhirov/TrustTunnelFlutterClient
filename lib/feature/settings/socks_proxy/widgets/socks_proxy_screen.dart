@@ -53,7 +53,7 @@ class _SocksProxyScreenState extends State<SocksProxyScreen> {
   Widget build(BuildContext context) => ScaffoldWrapper(
     child: Scaffold(
       appBar: CustomAppBar(
-        title: context.ln.socksProxySettings,
+        title: context.ln.connectionMode,
         centerTitle: true,
         leadingIconType: AppBarLeadingIconType.back,
       ),

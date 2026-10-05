@@ -53,7 +53,7 @@ class SettingsScreen extends StatelessWidget {
             ),
             const Divider(),
             CustomArrowListTile(
-              title: context.ln.socksProxySettings,
+              title: context.ln.connectionMode,
               onTap: () => _pushSocksProxyScreen(context),
             ),
             const Divider(),
